@@ -1,5 +1,7 @@
 version: "3"
-
+networks:
+  app-tier:
+    driver: bridge
 services:
   backend:
     build:
@@ -8,3 +10,13 @@ services:
     command:  uvicorn main:app --reload --workers 1 --host 0.0.0.0 --port 8000
     ports:
       - 8000:8000
+  memgraph-mage:
+    build: ./memgraph
+    entrypoint:
+      [
+        "/usr/lib/memgraph/memgraph",
+      ]
+    ports:
+      - "7687:7687"
+    networks:
+      - app-tier
