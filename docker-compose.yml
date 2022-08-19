@@ -60,16 +60,15 @@ services:
       MG_PORT: 7687
     depends_on:
       - memgraph-mage
+      - firebase
     networks:
       - app-tier
-    command:  uvicorn main:app --reload --workers 1 --host 0.0.0.0 --port 8000
 
   firebase:
     build:
       context: ./firebase
     image: firebase
     depends_on:
-      - backend
       - zookeeper
       - broker
     networks:

@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { initializeApp } from 'firebase/app';
 import { get, getDatabase, ref, onValue } from "firebase/database";
 import { Kafka } from 'kafkajs';
