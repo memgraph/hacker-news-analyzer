@@ -19,7 +19,6 @@ const bestStoriesRef = ref(db, "/v0/beststories");
 onValue(bestStoriesRef, (snapshot) => {
   
   const slicedBestStories = snapshot.val().slice(1,31);
-  const bestStories = [];
   slicedBestStories.forEach(bestStory => {
     get(ref(db, `/v0/item/${bestStory}`)).then((snapshot2) => {
       send(snapshot2.val())
@@ -32,7 +31,6 @@ onValue(bestStoriesRef, (snapshot) => {
 
 const send = async (bestStory) => {
   const producer = kafka.producer()
-  console.log(JSON.stringify(bestStory))
   try {
     await producer.connect()
     await producer.send({
