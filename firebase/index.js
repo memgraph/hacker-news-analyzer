@@ -22,10 +22,7 @@ onValue(bestStoriesRef, (snapshot) => {
   const bestStories = [];
   slicedBestStories.forEach(bestStory => {
     get(ref(db, `/v0/item/${bestStory}`)).then((snapshot2) => {
-      bestStories.push(snapshot2.val())
-      if(bestStories.length == 30) {
-        send(bestStories)
-      }
+      send(snapshot2.val())
     }).catch((error) => {
       console.error(error);
     });
@@ -33,19 +30,18 @@ onValue(bestStoriesRef, (snapshot) => {
 });
 
 
-const send = async (bestStories) => {
-  const mappedBestStories = bestStories.map((bestStory, index) => {
-    return {
-      key: index.toString(),
-      value: JSON.stringify(bestStory)
-    }
-  })
+const send = async (bestStory) => {
   const producer = kafka.producer()
+  console.log(JSON.stringify(bestStory))
   try {
     await producer.connect()
     await producer.send({
       topic: 'best-stories',
-      messages: mappedBestStories
+      messages: [
+        {
+          value: JSON.stringify(bestStory)
+        }
+      ]
     })
     await producer.disconnect()
   } catch (error) {

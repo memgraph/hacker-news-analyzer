@@ -7,15 +7,24 @@ def stories(messages: mgp.Messages) -> mgp.Record(query = str, parameters=mgp.Nu
     result_queries = []
     for i in range(messages.total_messages()):
         message = messages.message_at(i)
-        best_stories = json.loads(message.payload().decode('utf8'))
-        result_queries.append(mgp.Record (
-            query=(
-                "MERGE (s {id: $storyId, by: $by, score: $score, title: $title});"
-            ),
-            parameters={
-                "storyId": best_stories["id"],
-                "title": best_stories["title"],
-                "score": best_stories["score"],
-                "by": best_stories["by"]
-            }))
+        story = json.loads(message.payload())
+
+        for kid in story["kids"]:
+            result_queries.append(mgp.Record(
+                query=(
+                    '''
+                    MERGE (c:Comment {id: $commentId})
+                    MERGE (s:Story {id: $storyId, by: $by, title: $title})
+                    ON CREATE SET s.score=$score
+                    ON MATCH SET s.score=$score
+                    MERGE (s)-[h:HAS]->(c);'''
+                ),
+                parameters={
+                    "commentId": kid,
+                    "storyId": story["id"],
+                    "title": story["title"],
+                    "score": story["score"],
+                    "by": story["by"]
+                }
+            ))
     return result_queries
