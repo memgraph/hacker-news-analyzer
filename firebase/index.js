@@ -15,29 +15,54 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const bestStoriesRef = ref(db, "/v0/beststories");
-onValue(bestStoriesRef, (snapshot) => {
-  
-  const slicedBestStories = snapshot.val().slice(1,31);
-  slicedBestStories.forEach(bestStory => {
-    get(ref(db, `/v0/item/${bestStory}`)).then((snapshot2) => {
-      send(snapshot2.val())
+const topStoriesRef = ref(db, "/v0/topstories");
+
+
+onValue(topStoriesRef, (snapshot) => {
+  const slicedTopStories = snapshot.val().slice(1,31);
+  slicedTopStories.forEach(topStory => {
+    get(ref(db, `/v0/item/${topStory}`)).then((snapshot2) => {
+      sendTopStory(snapshot2.val())
+      get(ref(db, `/v0/user/${snapshot2.val().by}`)).then((snapshot3) => {
+        sendUser(snapshot3.val())
+      })
     }).catch((error) => {
       console.error(error);
     });
+    
   });
 });
 
-
-const send = async (bestStory) => {
-  const producer = kafka.producer()
+const sendTopStory = async (topStory) => {
+  if(topStory.type === "job") return;
+  if(!topStory.kids) return;
+  const producer = kafka.producer();
   try {
     await producer.connect()
     await producer.send({
-      topic: 'best-stories',
+      topic: 'top-stories',
       messages: [
         {
-          value: JSON.stringify(bestStory)
+          value: JSON.stringify(topStory)
+        }
+      ]
+    })
+    await producer.disconnect()
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+const sendUser = async (user) => {
+  const producer = kafka.producer();
+  console.log(user)
+  try {
+    await producer.connect()
+    await producer.send({
+      topic: 'users',
+      messages: [
+        {
+          value: JSON.stringify(user)
         }
       ]
     })

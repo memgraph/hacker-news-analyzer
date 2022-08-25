@@ -71,6 +71,7 @@ services:
     depends_on:
       - zookeeper
       - broker
+      - memgraph-mage
     networks:
       - app-tier
   frontend:
