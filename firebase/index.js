@@ -16,16 +16,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const topStoriesRef = ref(db, "/v0/topstories");
-
+const bestStoriesRef = ref(db, "/v0/beststories")
 
 onValue(topStoriesRef, (snapshot) => {
-  const slicedTopStories = snapshot.val().slice(1,31);
-  slicedTopStories.forEach(topStory => {
+  snapshot.val().forEach(topStory => {
     get(ref(db, `/v0/item/${topStory}`)).then((snapshot2) => {
       sendTopStory(snapshot2.val())
-      get(ref(db, `/v0/user/${snapshot2.val().by}`)).then((snapshot3) => {
-        sendUser(snapshot3.val())
-      })
     }).catch((error) => {
       console.error(error);
     });
@@ -33,8 +29,20 @@ onValue(topStoriesRef, (snapshot) => {
   });
 });
 
+onValue(bestStoriesRef, (snapshot) => {
+  console.log(snapshot)
+  snapshot.val().forEach(bestStory => {
+    get(ref(db, `/v0/item/${bestStory}`)).then((snapshot2) => {
+      sendTopStory(snapshot2.val())
+    }).catch((error) => {
+      console.error(error);
+    });
+    
+  });
+})
+
 const sendTopStory = async (topStory) => {
-  if(topStory.type === "job") return;
+  if(topStory.type == "job") return;
   if(!topStory.kids) return;
   const producer = kafka.producer();
   try {
@@ -44,25 +52,6 @@ const sendTopStory = async (topStory) => {
       messages: [
         {
           value: JSON.stringify(topStory)
-        }
-      ]
-    })
-    await producer.disconnect()
-  } catch (error) {
-    console.log(error)
-  }
-}
-
-const sendUser = async (user) => {
-  const producer = kafka.producer();
-  console.log(user)
-  try {
-    await producer.connect()
-    await producer.send({
-      topic: 'users',
-      messages: [
-        {
-          value: JSON.stringify(user)
         }
       ]
     })

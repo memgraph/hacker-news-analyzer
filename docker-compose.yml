@@ -45,6 +45,7 @@ services:
           "--telemetry-enabled=false",
           "--query-modules-directory=/procedures,/transformations,/usr/lib/memgraph/query_modules",
           "--log-level=TRACE",
+          "--also-log-to-stderr=true"
       ]
     networks:
       - app-tier
@@ -74,9 +75,4 @@ services:
       - memgraph-mage
     networks:
       - app-tier
-  frontend:
-    build:
-      context: ./frontend
-    image: frontend
-    ports:
-      - 3000:3000
+ 
