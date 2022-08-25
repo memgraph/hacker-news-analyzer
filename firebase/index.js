@@ -16,8 +16,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const bestStoriesRef = ref(db, "/v0/beststories");
+
+
 onValue(bestStoriesRef, (snapshot) => {
-  
   const slicedBestStories = snapshot.val().slice(1,31);
   slicedBestStories.forEach(bestStory => {
     get(ref(db, `/v0/item/${bestStory}`)).then((snapshot2) => {
