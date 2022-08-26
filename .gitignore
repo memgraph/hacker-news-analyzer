@@ -374,3 +374,5 @@ yarn-error.log*
 # Memgraph directories mg_lib and mg_log
 mg_lib/
 mg_log/
+
+.vscode

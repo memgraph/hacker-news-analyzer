@@ -1,19 +1,17 @@
-from typing import Union
+from gqlalchemy import Memgraph, MemgraphKafkaStream
 
-from fastapi import FastAPI
-import uvicorn
+memgraph = Memgraph()
 
-app = FastAPI()
+def main():
+    stream = MemgraphKafkaStream(
+        name="best_stories_stream",
+        topics=["best-stories"],
+        transform="best_stories.stories",
+        bootstrap_servers="broker:9092",
+    )
+    memgraph.create_stream(stream)
+    memgraph.start_stream(stream)
 
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
 
 if __name__ == '__main__':
-    uvicorn.run(app)
+    main()
