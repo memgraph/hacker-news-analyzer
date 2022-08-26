@@ -30,20 +30,19 @@ onValue(topStoriesRef, (snapshot) => {
 });
 
 onValue(bestStoriesRef, (snapshot) => {
-  console.log(snapshot)
   snapshot.val().forEach(bestStory => {
     get(ref(db, `/v0/item/${bestStory}`)).then((snapshot2) => {
       sendTopStory(snapshot2.val())
     }).catch((error) => {
       console.error(error);
     });
-    
   });
 })
 
 const sendTopStory = async (topStory) => {
-  if(topStory.type == "job") return;
-  if(!topStory.kids) return;
+  
+  if(topStory.type == "job" || !topStory.kids || !topStory.title) return;
+
   const producer = kafka.producer();
   try {
     await producer.connect()
