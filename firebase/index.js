@@ -18,13 +18,32 @@ const db = getDatabase(app);
 const topStoriesRef = ref(db, "/v0/topstories");
 
 onValue(topStoriesRef, (snapshot) => {
-  snapshot.val().forEach(topStory => {
-    get(ref(db, `/v0/item/${topStory}`)).then((snapshot2) => {
-      snapshot2.val().kids.forEach((comment) => {
-        get(ref(db, `/v0/item/${comment}`)).then((snapshot3) => {
-          sendTopStory(snapshot2.val(), snapshot3.val())
-        })
+  const topStories = snapshot.val().slice(1,35);
+  topStories.forEach(topStory => {
+    get(ref(db, `/v0/item/${topStory}`)).then((story) => {
+      get(ref(db, `/v0/user/${story.val().by}`)).then(user => {
+        if(user.val().submitted) {
+          user.val().submitted.forEach(userStoryId => {
+            get(ref(db, `/v0/item/${userStoryId}`)).then(userStory => {
+              if(userStory.val().kids) {
+                userStory.val().kids.forEach((commentUserStoryId) => {
+                  get(ref(db, `/v0/item/${commentUserStoryId}`)).then((commentUserStory) => {
+                    sendTopStory(userStory.val(), commentUserStory.val())
+                  })
+                })
+              }
+            })
+          })
+        }
       })
+
+      if(story.val().kids) {
+        story.val().kids.forEach((commentId) => {
+          get(ref(db, `/v0/item/${commentId}`)).then((comment) => {
+            sendTopStory(story.val(), comment.val())
+          })
+        })
+      }
     }).catch((error) => {
       console.error(error);
     });
@@ -38,7 +57,6 @@ const sendTopStory = async (topStory, comment) => {
   if(topStory.type == "job" || !topStory.kids || !topStory.title || !comment.by) return;
 
   topStory["comment"] = comment;
-  console.log(topStory)
   const producer = kafka.producer();
   try {
     await producer.connect()
