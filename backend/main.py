@@ -3,15 +3,15 @@ from gqlalchemy import Memgraph, MemgraphKafkaStream
 memgraph = Memgraph()
 
 def main():
-    stream = MemgraphKafkaStream(
-        name="best_stories_stream",
-        topics=["best-stories"],
-        transform="best_stories.stories",
+    streamTopStories = MemgraphKafkaStream(
+        name="top_stories_stream",
+        topics=["top-stories"],
+        transform="stories.stories",
         bootstrap_servers="broker:9092",
     )
-    memgraph.create_stream(stream)
-    memgraph.start_stream(stream)
-
+    memgraph.create_stream(streamTopStories)
+    memgraph.start_stream(streamTopStories)
+   
 
 if __name__ == '__main__':
     main()

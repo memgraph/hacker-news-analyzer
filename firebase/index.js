@@ -15,30 +15,42 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const bestStoriesRef = ref(db, "/v0/beststories");
+const topStoriesRef = ref(db, "/v0/topstories");
+const bestStoriesRef = ref(db, "/v0/beststories")
 
+onValue(topStoriesRef, (snapshot) => {
+  snapshot.val().forEach(topStory => {
+    get(ref(db, `/v0/item/${topStory}`)).then((snapshot2) => {
+      sendTopStory(snapshot2.val())
+    }).catch((error) => {
+      console.error(error);
+    });
+    
+  });
+});
 
 onValue(bestStoriesRef, (snapshot) => {
-  const slicedBestStories = snapshot.val().slice(1,31);
-  slicedBestStories.forEach(bestStory => {
+  snapshot.val().forEach(bestStory => {
     get(ref(db, `/v0/item/${bestStory}`)).then((snapshot2) => {
-      send(snapshot2.val())
+      sendTopStory(snapshot2.val())
     }).catch((error) => {
       console.error(error);
     });
   });
-});
+})
 
+const sendTopStory = async (topStory) => {
+  
+  if(topStory.type == "job" || !topStory.kids || !topStory.title) return;
 
-const send = async (bestStory) => {
-  const producer = kafka.producer()
+  const producer = kafka.producer();
   try {
     await producer.connect()
     await producer.send({
-      topic: 'best-stories',
+      topic: 'top-stories',
       messages: [
         {
-          value: JSON.stringify(bestStory)
+          value: JSON.stringify(topStory)
         }
       ]
     })
