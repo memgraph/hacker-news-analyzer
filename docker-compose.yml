@@ -49,22 +49,6 @@ services:
       ]
     networks:
       - app-tier
-  backend:
-    build:
-      context: ./backend
-    image: backend
-    container_name: "backend"
-    ports:
-      - 8000:8000
-    environment:
-      MG_HOST: memgraph-mage
-      MG_PORT: 7687
-    depends_on:
-      - memgraph-mage
-      - firebase
-    networks:
-      - app-tier
-
   firebase:
     build:
       context: ./firebase
@@ -75,4 +59,21 @@ services:
       - memgraph-mage
     networks:
       - app-tier
- 
+  backend:
+    build:
+      context: ./backend
+    image: backend
+    command:  uvicorn main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    ports:
+      - 8000:8000
+    environment:
+      MG_HOST: memgraph-mage
+      MG_PORT: 7687
+    container_name: "backend"
+    depends_on:
+      - memgraph-mage
+      - firebase
+      - zookeeper
+      - broker
+    networks:
+      - app-tier

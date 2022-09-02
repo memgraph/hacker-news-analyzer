@@ -5,59 +5,32 @@ import { Kafka } from 'kafkajs';
 const kafka = new Kafka({
   clientId: 'firebase',
   brokers: ['broker:9092'],
+  connectionTimeout: 5000
 })
 
+const producer = kafka.producer();
 
-
-// TODO: Replace the following with your app's Firebase project configuration
 const firebaseConfig = {
     databaseURL: "https://hacker-news.firebaseio.com",
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
 const topStoriesRef = ref(db, "/v0/topstories");
 
-onValue(topStoriesRef, (snapshot) => {
-  const topStories = snapshot.val().slice(1,35);
-  topStories.forEach(topStory => {
-    get(ref(db, `/v0/item/${topStory}`)).then((story) => {
-      get(ref(db, `/v0/user/${story.val().by}`)).then(user => {
-        if(user.val().submitted) {
-          user.val().submitted.forEach(userStoryId => {
-            get(ref(db, `/v0/item/${userStoryId}`)).then(userStory => {
-              if(userStory.val().kids) {
-                userStory.val().kids.forEach((commentUserStoryId) => {
-                  get(ref(db, `/v0/item/${commentUserStoryId}`)).then((commentUserStory) => {
-                    sendTopStory(userStory.val(), commentUserStory.val())
-                  })
-                })
-              }
-            })
-          })
-        }
+const sending = (story) => {
+  if(story.val().kids) {
+    story.val().kids.forEach((commentId) => {
+      sendTopStory(story.val(), {
+        id: commentId
       })
-
-      if(story.val().kids) {
-        story.val().kids.forEach((commentId) => {
-          get(ref(db, `/v0/item/${commentId}`)).then((comment) => {
-            sendTopStory(story.val(), comment.val())
-          })
-        })
-      }
-    }).catch((error) => {
-      console.error(error);
-    });
-    
-  });
-});
-
+    })
+  }
+}
 
 const sendTopStory = async (topStory, comment) => {
-  
-  if(topStory.type == "job" || !topStory.kids || !topStory.title || !comment.by) return;
-
+  if (topStory.type == "job" || !topStory.kids || !topStory.title) return;
   topStory["comment"] = comment;
-  const producer = kafka.producer();
   try {
     await producer.connect()
     await producer.send({
@@ -73,3 +46,21 @@ const sendTopStory = async (topStory, comment) => {
     console.log(error)
   }
 }
+
+onValue(topStoriesRef, (snapshot) => {
+  const topStories = snapshot.val().slice(1,35);
+  topStories.forEach(topStory => {
+    get(ref(db, `/v0/item/${topStory}`)).then((story) => {
+      sending(story);
+      get(ref(db, `/v0/user/${story.val().by}`)).then(user => {
+        user.val().submitted.forEach(userStoryId => {
+          get(ref(db, `/v0/item/${userStoryId}`)).then(userStory => {
+              sending(userStory);
+          })
+        })  
+      })
+    }).catch((error) => {
+      console.error(error);
+    });
+  });
+});

@@ -12,8 +12,7 @@ def stories(messages: mgp.Messages) -> mgp.Record(query = str, parameters=mgp.Nu
         result_queries.append(mgp.Record(
             query=(
                 '''
-                MERGE (c:Comment {id: $commentId, by: $commentBy})
-                MERGE (uc:User {id: $commentBy})
+                MERGE (c:Comment {id: $commentId})
                 MERGE (s:Story {id: $storyId})
                 SET s.score=$score
                 SET s.title=$title
@@ -23,7 +22,6 @@ def stories(messages: mgp.Messages) -> mgp.Record(query = str, parameters=mgp.Nu
             ),
             parameters={
                 "commentId": comment["id"],
-                "commentBy": comment["by"],
                 "storyId": story["id"],
                 "title": story["title"],
                 "score": story["score"],
