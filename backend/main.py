@@ -1,7 +1,8 @@
-from gqlalchemy import Memgraph, Match, Call, MemgraphKafkaStream
+from gqlalchemy import Memgraph, Call, MemgraphKafkaStream
 import logging
 import time
-from functools import wraps
+from fastapi.middleware.cors import CORSMiddleware
+
 
 from fastapi import FastAPI
 
@@ -11,6 +12,17 @@ memgraph = Memgraph()
 
 log = logging.getLogger(__name__)
 
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def init_log():
     logging.basicConfig(level=logging.DEBUG)
@@ -39,7 +51,7 @@ def get_pagerank():
         )
     return results
 
-@app.get("/")
+@app.get("/pagerank")
 def get_user_rank():
     results = get_pagerank()
     return results

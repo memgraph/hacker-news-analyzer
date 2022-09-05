@@ -77,3 +77,13 @@ services:
       - broker
     networks:
       - app-tier
+  frontend:
+    build:
+      context: ./frontend
+    image: frontend
+    ports:
+      - 3000:3000
+    depends_on:
+      - backend
+    networks:
+      - app-tier
