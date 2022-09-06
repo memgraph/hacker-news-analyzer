@@ -8,7 +8,12 @@ const client = axios.create({
 
 
 
-export async function getTopStories() {
+export async function getPagerank() {
     const response = await client.get("/pagerank");
-    return response;
+    return response.data;
+}
+
+export async function getTopStories() {
+    const response = await client.get("/topstories");
+    return response.data;
 }

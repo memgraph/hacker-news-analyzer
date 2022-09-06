@@ -1,4 +1,3 @@
-import React from 'react';
 import Header from './components/Header';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Home from './pages/Home';
@@ -7,9 +6,9 @@ const theme = createTheme({
   palette: {
     primary: {
       light: '#FFC500',
-      main: '#19AF66',
+      main: '#FB6E00',
       dark: '#DD2222',
-      contrastText: '#3E323F',
+      contrastText: '#F9F9F9',
     },
     secondary: {
       light: '#8C0082',
@@ -17,6 +16,10 @@ const theme = createTheme({
       dark: '#5B0078',
       contrastText: '#3E323F',
     },
+    background: {
+      default: '#BAB8BB',
+      paper: '#F9F9F9'
+    }
   },
   typography: {
     h1: {

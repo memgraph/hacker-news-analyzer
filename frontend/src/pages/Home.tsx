@@ -1,82 +1,38 @@
-import { Orb } from '@memgraph/orb';
 import { useEffect, useState } from 'react';
-import { getTopStories } from '../services/BackendService';
-import React from "react";
+import { getPagerank, getTopStories } from '../services/BackendService';
+import Graph from '../components/Graph';
+import RankTable from '../components/RankTable';
+import { Grid } from '@mui/material';
 
-interface User {
-    user_id: string,
-    rank: number
-}
-
-interface Nodes {
-    id: number,
+export interface User {
     user_id: string,
     rank: number
 }
 
 function Home() {
-    const [nodes, setNodes] = useState<Nodes[]>();
-    const [users, setUsers] = useState<User[]>();
+    const [nodes, setNodes] = useState();
     const [edges, setEdges] = useState();
+
+    const [pagerank, setPagerank] = useState<User[]>();
+
     useEffect(() => {
-        getTopStories().then(res => setUsers(res.data));
+        getPagerank().then(res => setPagerank(res));
+        getTopStories().then(res => {
+            setNodes(res.nodes);
+            setEdges(res.edges)
+        });
     }, []);
-   
-    useEffect(() => {
-        if(users) {
-            const userNodes: Nodes[]  = users.map((user, index) => {
-                return {
-                    id: index+1,
-                    user_id: user.user_id,
-                    rank: user.rank
-                }
-            });
-            console.log(userNodes)
-            setNodes(userNodes);
-            console.log("participant is here");
-            console.log(nodes);
-            console.log(edges);
-            const container: HTMLElement = document.getElementById("participant")!;
-            const orb = new Orb(container);
-            orb.data.setDefaultStyle({
-                getNodeStyle(node) {
-                  const basicStyle = {
-                    color: '#FB6E00',
-                    colorHover: '#e7644e',
-                    colorSelected: '#e7644e',
-                    fontSize: 8,
-                    label: node.data.user_id,
-                    size: node.data.rank * 400,
-                  };
-                  return {
-                    ...node.properties,
-                    ...basicStyle
-                  };
-                },
-               
-              });
-          
-            // Initialize nodes and edges
-            orb.data.setup({ nodes, edges });
-            console.log(orb.data.getNodes())
-            console.log(orb.data.getEdges())
-           
-            
-            orb.view.render(() => {
-
-                orb.view.recenter();
-
-            });
-        }
-    }, [users]);
-
+    
     return (
-        <div style={{ height: "800px" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100%" }}>
-                <div id="participant" style={{ flex: "1", width: "100%" }}>Hi graph!</div>
-            </div>
-        </div>
-    )
+       <Grid container spacing={2}>
+            <Grid item xs={8}>
+                {nodes && edges && <Graph nodes={nodes} edges={edges}/>}
+            </Grid>
+            <Grid item xs={4}>
+                {pagerank && <RankTable rows={pagerank}/>}        
+            </Grid>
+        </Grid>
+    );
 }
 
 export default Home;
