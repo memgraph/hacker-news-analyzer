@@ -1,0 +1,89 @@
+version: "3"
+networks:
+  app-tier:
+    driver: bridge
+
+services:
+  zookeeper:
+    image: "bitnami/zookeeper:3.7"
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - app-tier
+
+  broker:
+    image: "bitnami/kafka:2"
+    container_name: broker
+    logging:
+      driver: none
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://broker:9092,EXTERNAL://localhost:9093
+      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
+    depends_on:
+      - zookeeper
+    networks:
+      - app-tier
+  memgraph-mage:
+    build: ./memgraph
+    ports:
+      - "7687:7687"
+      - "7444:7444"
+    entrypoint:
+      [
+          "/usr/lib/memgraph/memgraph",
+          "--telemetry-enabled=false",
+          "--query-modules-directory=/procedures,/transformations,/usr/lib/memgraph/query_modules",
+          "--log-level=TRACE",
+          "--also-log-to-stderr=true"
+      ]
+    networks:
+      - app-tier
+  firebase:
+    build:
+      context: ./firebase
+    image: firebase
+    depends_on:
+      - zookeeper
+      - broker
+      - memgraph-mage
+    networks:
+      - app-tier
+  backend:
+    build:
+      context: ./backend
+    image: backend
+    command:  uvicorn main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    ports:
+      - 8000:8000
+    environment:
+      MG_HOST: memgraph-mage
+      MG_PORT: 7687
+    container_name: "backend"
+    depends_on:
+      - memgraph-mage
+      - firebase
+      - zookeeper
+      - broker
+    networks:
+      - app-tier
+  frontend:
+    build:
+      context: ./frontend
+    image: frontend
+    ports:
+      - 3000:3000
+    depends_on:
+      - backend
+    networks:
+      - app-tier
