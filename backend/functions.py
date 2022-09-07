@@ -1,12 +1,12 @@
 from gqlalchemy import Match, Call
-from gqlalchemy.query_builders.memgraph_query_builder import Operator
+from gqlalchemy.query_builders.memgraph_query_builder import Operator, Order
 
 
 def get_topstories():
     results = list(
             Match()
             .node(labels="Story", variable="s")
-            .to("WRITTEN_BY", variable="w")
+            .to(relationship_type="WRITTEN_BY", variable="w")
             .node(labels="User", variable="u")
             .return_()
             .execute()
@@ -100,10 +100,10 @@ def get_pagerank():
     results = list(
             Call("pagerank.get")
             .yield_()
-            .with_({"node": "node", "rank": "rank"})
+            .with_(["node", "rank"])
             .where(item="node", operator=Operator.LABEL_FILTER, expression="User")
-            .return_({"node.id": "user_id", "rank": "rank"})
-            .order_by("rank DESC")
+            .return_([("node.id", "user_id"), "rank"])
+            .order_by(("rank", Order.DESC))
             .execute()
         )
     return results
