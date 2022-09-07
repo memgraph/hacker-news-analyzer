@@ -5,45 +5,32 @@ import { Kafka } from 'kafkajs';
 const kafka = new Kafka({
   clientId: 'firebase',
   brokers: ['broker:9092'],
+  connectionTimeout: 5000
 })
 
+const producer = kafka.producer();
 
-
-// TODO: Replace the following with your app's Firebase project configuration
 const firebaseConfig = {
     databaseURL: "https://hacker-news.firebaseio.com",
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
 const topStoriesRef = ref(db, "/v0/topstories");
-const bestStoriesRef = ref(db, "/v0/beststories")
 
-onValue(topStoriesRef, (snapshot) => {
-  snapshot.val().forEach(topStory => {
-    get(ref(db, `/v0/item/${topStory}`)).then((snapshot2) => {
-      sendTopStory(snapshot2.val())
-    }).catch((error) => {
-      console.error(error);
-    });
-    
-  });
-});
+const sending = (story) => {
+  if(story.val().kids) {
+    story.val().kids.forEach((commentId) => {
+      sendTopStory(story.val(), {
+        id: commentId
+      })
+    })
+  }
+}
 
-onValue(bestStoriesRef, (snapshot) => {
-  snapshot.val().forEach(bestStory => {
-    get(ref(db, `/v0/item/${bestStory}`)).then((snapshot2) => {
-      sendTopStory(snapshot2.val())
-    }).catch((error) => {
-      console.error(error);
-    });
-  });
-})
-
-const sendTopStory = async (topStory) => {
-  
-  if(topStory.type == "job" || !topStory.kids || !topStory.title) return;
-
-  const producer = kafka.producer();
+const sendTopStory = async (topStory, comment) => {
+  if (topStory.type == "job" || !topStory.kids || !topStory.title) return;
+  topStory["comment"] = comment;
   try {
     await producer.connect()
     await producer.send({
@@ -59,3 +46,21 @@ const sendTopStory = async (topStory) => {
     console.log(error)
   }
 }
+
+onValue(topStoriesRef, (snapshot) => {
+  const topStories = snapshot.val().slice(1,35);
+  topStories.forEach(topStory => {
+    get(ref(db, `/v0/item/${topStory}`)).then((story) => {
+      sending(story);
+      get(ref(db, `/v0/user/${story.val().by}`)).then(user => {
+        user.val().submitted.forEach(userStoryId => {
+          get(ref(db, `/v0/item/${userStoryId}`)).then(userStory => {
+              sending(userStory);
+          })
+        })  
+      })
+    }).catch((error) => {
+      console.error(error);
+    });
+  });
+});
