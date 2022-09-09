@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const baseURL = "https://hacker-news.firebaseio.com/v0/";
+const baseURL = "http://localhost:8000";
 const client = axios.create({ 
     baseURL : baseURL,
     headers: {'Access-Control-Allow-Origin': '*'}
@@ -8,7 +8,12 @@ const client = axios.create({
 
 
 
+export async function getPagerank() {
+    const response = await client.get("/pagerank");
+    return response.data;
+}
+
 export async function getTopStories() {
-    const response = await client.get("/topstories.json?print=pretty")
-    return response;
+    const response = await client.get("/topstories");
+    return response.data;
 }
