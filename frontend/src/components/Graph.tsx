@@ -5,10 +5,23 @@ interface GraphProps {
     nodes: any;
     edges: any
 }
+
+interface Node {
+    id: number;
+    title: string;
+    username: string;
+}
+
+interface Edge {
+    id: number;
+    start: number;
+    end: number;
+}
+
 function Graph({ nodes, edges } : GraphProps) {
     useEffect(() => {
         const container: HTMLElement = document.getElementById("graph")!;
-        const orb = new Orb(container);
+        const orb = new Orb<Node,Edge>(container);
         orb.data.setup({ nodes, edges });
 
         orb.data.getNodes().filter((node) => node.getLabel() === "Story")
